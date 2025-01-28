@@ -3,7 +3,7 @@ from app.models import db, Citizen, Campaign
 
 main = Blueprint('main', __name__)
 
-# Routes for Citizen CRUD operations
+# Citizen CRUD Operations
 
 @main.route('/citizens', methods=['POST'])
 def create_citizen():
@@ -54,38 +54,55 @@ def delete_citizen(id):
     db.session.commit()
     return jsonify({"message": "Citizen deleted"})
 
-# Routes for Campaign CRUD operations
+# Campaign CRUD Operations
 
 @main.route('/campaigns', methods=['POST'])
 def create_campaign():
     data = request.json
-    new_campaign = Campaign(name=data['name'])
+    if 'name' not in data or 'start_date' not in data:
+        return jsonify({"error": "Missing required fields: name or start_date"}), 400
+
+    new_campaign = Campaign(
+        name=data['name'],
+        start_date=data['start_date'],
+        end_date=data.get('end_date'),
+        description=data.get('description')
+    )
     db.session.add(new_campaign)
     db.session.commit()
     return jsonify({"message": "Campaign created", "campaign": {
         "id": new_campaign.id,
-        "name": new_campaign.name
+        "name": new_campaign.name,
+        "start_date": new_campaign.start_date,
+        "end_date": new_campaign.end_date,
+        "description": new_campaign.description
     }}), 201
 
 @main.route('/campaigns', methods=['GET'])
 def get_campaigns():
     campaigns = Campaign.query.all()
-    return jsonify([{ "id": c.id, "name": c.name } for c in campaigns])
+    return jsonify([{ "id": c.id, "name": c.name, "start_date": c.start_date, "end_date": c.end_date, "description": c.description } for c in campaigns])
 
 @main.route('/campaigns/<int:id>', methods=['GET'])
 def get_campaign(id):
     campaign = Campaign.query.get_or_404(id)
-    return jsonify({ "id": campaign.id, "name": campaign.name })
+    return jsonify({ "id": campaign.id, "name": campaign.name, "start_date": campaign.start_date, "end_date": campaign.end_date, "description": campaign.description })
 
 @main.route('/campaigns/<int:id>', methods=['PUT'])
 def update_campaign(id):
     data = request.json
     campaign = Campaign.query.get_or_404(id)
     campaign.name = data.get('name', campaign.name)
+    campaign.start_date = data.get('start_date', campaign.start_date)
+    campaign.end_date = data.get('end_date', campaign.end_date)
+    campaign.description = data.get('description', campaign.description)
     db.session.commit()
     return jsonify({"message": "Campaign updated", "campaign": {
         "id": campaign.id,
-        "name": campaign.name
+        "name": campaign.name,
+        "start_date": campaign.start_date,
+        "end_date": campaign.end_date,
+        "description": campaign.description
     }})
 
 @main.route('/campaigns/<int:id>', methods=['DELETE'])
