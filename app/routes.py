@@ -1,25 +1,38 @@
 from flask import Blueprint, jsonify, request
 from app.models import db, Citizen, Campaign
+from datetime import datetime
 
 main = Blueprint('main', __name__)
 
 # Citizen CRUD Operations
 
-@main.route('/citizens', methods=['POST'])
-def create_citizen():
+@main.route('/campaigns', methods=['POST'])
+def create_campaign():
     data = request.json
-    new_citizen = Citizen(
-        name=data['name'], 
-        email=data['email'], 
-        constituency=data['constituency']
+    if 'name' not in data or 'start_date' not in data:
+        return jsonify({"error": "Missing required fields: name or start_date"}), 400
+
+    try:
+        # Convert string dates to Python date objects
+        start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+        end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date() if data.get('end_date') else None
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+
+    new_campaign = Campaign(
+        name=data['name'],
+        start_date=start_date,
+        end_date=end_date,
+        description=data.get('description')
     )
-    db.session.add(new_citizen)
+    db.session.add(new_campaign)
     db.session.commit()
-    return jsonify({"message": "Citizen created", "citizen": {
-        "id": new_citizen.id,
-        "name": new_citizen.name,
-        "email": new_citizen.email,
-        "constituency": new_citizen.constituency
+    return jsonify({"message": "Campaign created", "campaign": {
+        "id": new_campaign.id,
+        "name": new_campaign.name,
+        "start_date": new_campaign.start_date.isoformat(),
+        "end_date": new_campaign.end_date.isoformat() if new_campaign.end_date else None,
+        "description": new_campaign.description
     }}), 201
 
 @main.route('/citizens', methods=['GET'])
