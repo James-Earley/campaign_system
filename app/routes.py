@@ -61,7 +61,7 @@ def delete_citizen(id):
 
 # Campaign CRUD Operations
 
-main.route('/campaigns', methods=['POST'])
+@main.route('/campaigns', methods=['POST'])
 def create_campaign():
     data = request.json
     if 'name' not in data or 'start_date' not in data:
