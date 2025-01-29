@@ -1,2 +1,14 @@
-instance/
-*.db
+# Bytecode and cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+env/
+
+# IDE-specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
