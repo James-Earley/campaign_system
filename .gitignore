@@ -12,3 +12,7 @@ env/
 *.swp
 *.swo
 *.bak
+
+
+*.db
+*.sqlite*
