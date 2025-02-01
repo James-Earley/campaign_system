@@ -15,4 +15,5 @@ env/
 
 
 *.db
-*.sqlite*
+*.sqlite*app/settings.py
+app/settings.py
