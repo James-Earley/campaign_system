@@ -4,11 +4,27 @@ from datetime import datetime
 
 campaigns_bp = Blueprint('campaigns', __name__)
 
-# Function to get Campaign model dynamically
 def get_campaign_model():
     from app.models import initialize_models
-    Campaign, _, _ = initialize_models(db)  # Load Campaign model
+
+    #  Initialize models correctly
+    models = initialize_models(db)
+
+    #  Ensure models were returned
+    if not isinstance(models, tuple) or len(models) != 3:
+        raise RuntimeError("🚨 Error: initialize_models() did not return the expected models.")
+
+    Citizen, Campaign, Donation = models  #  Unpack correctly
+
+    #  Print inside the function to prevent NameError
+    print(f" get_campaign_model() loaded: Citizen={Citizen}, Campaign={Campaign}, Donation={Donation}")
+
+    if Campaign is None:
+        raise RuntimeError(" Error: Campaign model is None. Check initialize_models().")
+
     return Campaign
+
+
 
 # GET /api/v1/campaigns - List all campaigns
 @campaigns_bp.route('/', methods=['GET'])
