@@ -1,30 +1,37 @@
-# app/models/__init__.py
+from app import db  
+from .factory import model_factory, get_model  
 
-# Global variables for models
-Citizen = None
-Campaign = None
-Donation = None
+__all__ = [
+    'db',  # Add this
+    'model_factory',
+    'get_model'
+]
 
-def initialize_models(db):
-    global Citizen, Campaign, Donation
+# Model class name constants for type safety
+MODEL_NAMES = {
+    'ADDRESS': 'Address',  # Add this line
+    'CITIZEN': 'Citizen',
+    'VOTER': 'Voter',
+    'CAMPAIGN': 'Campaign',
+    'EVENT': 'Event',
+    'DONATION': 'Donation',
+    'VOLUNTEER': 'Volunteer',
+    'CAMPAIGN_EVENT': 'CampaignEvent',
+    'CAMPAIGN_TEAM': 'CampaignTeam',
+    'VOLUNTEER_ASSIGNMENT': 'VolunteerAssignment',
+    'CANVASSING_SESSION': 'CanvassingSession',
+    'CANVASSER': 'Canvasser',
+    'EVENT_STAFFER': 'EventStaffer',
+    'OUTREACH': 'Outreach',
+    'VOTING_INTENTION': 'VotingIntention' 
+}
 
-    #  Prevent multiple re-initializations
-    if Citizen and Campaign and Donation:
-        print(f" Returning already initialized models: {Citizen}, {Campaign}, {Donation}")
-        return Citizen, Campaign, Donation
-
-    from .citizen import create_citizen_model
-    from .campaign import create_campaign_model
-    from .donation import create_donation_model
-
-    Citizen = create_citizen_model(db)
-    Campaign = create_campaign_model(db)
-    Donation = create_donation_model(db)
-
-    #  Debugging output to confirm models are correctly initialized
-    print(f" Models initialized: Citizen={Citizen}, Campaign={Campaign}, Donation={Donation}")
-
-    if not Citizen or not Campaign or not Donation:
-        raise RuntimeError(" Error: One or more models were not initialized correctly.")
-
-    return Citizen, Campaign, Donation
+def get_initialized_models():
+    """
+    Get all initialized models from the factory.
+    Returns a dictionary of model names to model classes.
+    """
+    return {
+        model_name: get_model(model_name)
+        for model_name in MODEL_NAMES.values()
+    }

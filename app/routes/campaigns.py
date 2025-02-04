@@ -1,121 +1,193 @@
-from flask import Blueprint, jsonify, request
-from app import db
+from flask import Blueprint, request, current_app
+from functools import wraps
+from typing import Any
+from marshmallow import Schema, fields, ValidationError, validates, validate
+from sqlalchemy.exc import IntegrityError
 from datetime import datetime
+from app import db
+from app.models import get_model
 
-campaigns_bp = Blueprint('campaigns', __name__)
+# Create the blueprint
+campaigns_bp = Blueprint("campaigns", __name__, url_prefix="/campaigns")
 
-def get_campaign_model():
-    from app.models import initialize_models
+def create_response(data: Any = None, message: str = None, status: int = 200) -> tuple:
+    """Create a standardized API response."""
+    response = {"status": "success" if status < 400 else "error"}
+    if message:
+        response["message"] = message
+    if data is not None:
+        response["data"] = data
+    return response, status
 
-    #  Initialize models correctly
-    models = initialize_models(db)
+def handle_errors(f):
+    """Error handling decorator."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except ValidationError as e:
+            return create_response(message=str(e), status=400)
+        except IntegrityError as e:
+            db.session.rollback()
+            return create_response(message="Database integrity error", status=400)
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error in {f.__name__}: {str(e)}", exc_info=True)
+            return create_response(message=str(e), status=500)
+    return decorated_function
 
-    #  Ensure models were returned
-    if not isinstance(models, tuple) or len(models) != 3:
-        raise RuntimeError("🚨 Error: initialize_models() did not return the expected models.")
-
-    Citizen, Campaign, Donation = models  #  Unpack correctly
-
-    #  Print inside the function to prevent NameError
-    print(f" get_campaign_model() loaded: Citizen={Citizen}, Campaign={Campaign}, Donation={Donation}")
-
-    if Campaign is None:
-        raise RuntimeError(" Error: Campaign model is None. Check initialize_models().")
-
-    return Campaign
-
-
-
-# GET /api/v1/campaigns - List all campaigns
-@campaigns_bp.route('/', methods=['GET'])
-def get_campaigns():
-    Campaign = get_campaign_model()  # Ensure Campaign is loaded
-    campaigns = Campaign.query.all()
-    return jsonify([
-        {
-            "id": c.id,
-            "name": c.name,
-            "start_date": c.start_date.isoformat(),
-            "end_date": c.end_date.isoformat() if c.end_date else None,
-            "description": c.description
-        }
-        for c in campaigns
-    ]), 200
-
-# POST /api/v1/campaigns - Create a new campaign
-@campaigns_bp.route('/', methods=['POST'])
-def create_campaign():
-    Campaign = get_campaign_model()
-    data = request.get_json()
-    
-    try:
-        # Parse and validate dates
-        start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
-        end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date() if data.get('end_date') else None
-    except ValueError:
-        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
-
-    campaign = Campaign(
-        name=data['name'],
-        description=data.get('description'),
-        start_date=start_date,
-        end_date=end_date
+class CampaignSchema(Schema):
+    """Schema for validating campaign input."""
+    name = fields.String(required=True, validate=validate.Length(min=2, max=100))
+    description = fields.String(validate=validate.Length(max=500), required=False, allow_none=True)
+    start_date = fields.Date(required=True)
+    end_date = fields.Date(required=True)
+    status = fields.String(
+        validate=validate.OneOf(['planned', 'active', 'completed']), 
+        required=False, 
+        missing='planned'
     )
+
+    @validates("end_date")
+    def validate_end_date(self, value):
+        """Ensure end_date is after start_date."""
+        start_date = self.context.get("start_date")
+        
+        # Convert start_date to date if it's a string
+        if isinstance(start_date, str):
+            try:
+                start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            except ValueError:
+                raise ValidationError("Invalid start_date format. Use YYYY-MM-DD.")
+        
+        if start_date and value <= start_date:
+            raise ValidationError("End date must be after start date.")
+
+@campaigns_bp.route("", methods=["POST"])
+@handle_errors
+def create_campaign():
+    """Create a new campaign."""
+    Campaign = get_model('Campaign')
+    schema = CampaignSchema()
+    data = request.get_json()
+    current_app.logger.info(f"Received campaign data: {data}")
+
+    # Validate without context
+    validated_data = schema.load(data)
+
+    # Manually validate end date
+    start_date = datetime.strptime(data.get('start_date'), "%Y-%m-%d").date()
+    end_date = datetime.strptime(data.get('end_date'), "%Y-%m-%d").date()
+    
+    if end_date <= start_date:
+        raise ValidationError("End date must be after start date.")
+
+    campaign = Campaign(**validated_data)
     db.session.add(campaign)
     db.session.commit()
-    return jsonify({"message": "Campaign created successfully!", "campaign": {
-        "id": campaign.id,
-        "name": campaign.name,
-        "start_date": campaign.start_date.isoformat(),
-        "end_date": campaign.end_date.isoformat() if campaign.end_date else None,
-        "description": campaign.description
-    }}), 201
 
-# GET /api/v1/campaigns/<int:id> - Get a specific campaign by ID
-@campaigns_bp.route('/<int:id>', methods=['GET'])
-def get_campaign(id):
-    Campaign = get_campaign_model()
-    campaign = Campaign.query.get_or_404(id)
-    return jsonify({
-        "id": campaign.id,
-        "name": campaign.name,
-        "start_date": campaign.start_date.isoformat(),
-        "end_date": campaign.end_date.isoformat() if campaign.end_date else None,
-        "description": campaign.description
-    }), 200
+    return create_response(
+        data=schema.dump(campaign),
+        message="Campaign created successfully",
+        status=201
+    )
 
-# PUT /api/v1/campaigns/<int:id> - Update a specific campaign
-@campaigns_bp.route('/<int:id>', methods=['PUT'])
-def update_campaign(id):
-    Campaign = get_campaign_model()
-    campaign = Campaign.query.get_or_404(id)
-    data = request.get_json()
-    
-    try:
-        # Update and validate dates
-        campaign.start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date() if 'start_date' in data else campaign.start_date
-        campaign.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date() if 'end_date' in data else campaign.end_date
-    except ValueError:
-        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+@campaigns_bp.route("", methods=["GET"])
+@handle_errors
+def get_all_campaigns():
+    """Get all campaigns with optional filtering and pagination."""
+    Campaign = get_model('Campaign')
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+    query = Campaign.query
 
-    # Update other fields
-    campaign.name = data.get('name', campaign.name)
-    campaign.description = data.get('description', campaign.description)
+    # Filtering
+    if status := request.args.get("status"):
+        if status == "active":
+            query = query.filter(Campaign.end_date >= datetime.now().date())
+        elif status == "completed":
+            query = query.filter(Campaign.end_date < datetime.now().date())
 
+    if search := request.args.get("search"):
+        query = query.filter(Campaign.name.ilike(f"%{search}%"))
+
+    # Sorting
+    sort_by = request.args.get("sort_by", "start_date")
+    sort_order = request.args.get("sort_order", "desc")
+    if hasattr(Campaign, sort_by):
+        query = query.order_by(getattr(Campaign, sort_by).desc() if sort_order == "desc" else getattr(Campaign, sort_by))
+    else:
+        return create_response(message=f"Invalid sort field: {sort_by}", status=400)
+
+    # Pagination
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    schema = CampaignSchema(many=True)
+
+    return create_response(
+        data={
+            "campaigns": schema.dump(pagination.items),
+            "meta": {
+                "page": page,
+                "per_page": per_page,
+                "total_pages": pagination.pages,
+                "total_items": pagination.total
+            }
+        }
+    )
+
+@campaigns_bp.route("/<int:campaign_id>", methods=["GET"])
+@handle_errors
+def get_campaign(campaign_id: int):
+    """Get a specific campaign."""
+    Campaign = get_model('Campaign')
+    campaign = Campaign.query.get_or_404(campaign_id)
+    schema = CampaignSchema()
+    return create_response(data=schema.dump(campaign))
+
+@campaigns_bp.route("/<int:campaign_id>", methods=["PATCH"])
+@handle_errors
+def update_campaign(campaign_id: int):
+    """Update a campaign."""
+    Campaign = get_model('Campaign')
+    campaign = Campaign.query.get_or_404(campaign_id)
+    schema = CampaignSchema(partial=True)
+    data = schema.load(
+        request.get_json(), 
+        context={"start_date": request.get_json().get('start_date') if request.get_json() else None}
+    )
+
+    for key, value in data.items():
+        setattr(campaign, key, value)
     db.session.commit()
-    return jsonify({"message": "Campaign updated successfully!", "campaign": {
-        "id": campaign.id,
-        "name": campaign.name,
-        "start_date": campaign.start_date.isoformat(),
-        "end_date": campaign.end_date.isoformat() if campaign.end_date else None,
-        "description": campaign.description
-    }}), 200
 
-# DELETE /api/v1/campaigns/<int:id> - Delete a specific campaign
-@campaigns_bp.route('/<int:id>', methods=['DELETE'])
-def delete_campaign(id):
-    Campaign = get_campaign_model()
-    campaign = Campaign.query.get_or_404(id)
+    return create_response(
+        data=schema.dump(campaign),
+        message="Campaign updated successfully"
+    )
+
+@campaigns_bp.route("/<int:campaign_id>", methods=["DELETE"])
+@handle_errors
+def delete_campaign(campaign_id: int):
+    """Delete a campaign."""
+    Campaign = get_model('Campaign')
+    campaign = Campaign.query.get_or_404(campaign_id)
     db.session.delete(campaign)
     db.session.commit()
-    return jsonify({"message": "Campaign deleted successfully!"}), 200
+
+    return create_response(message="Campaign deleted successfully")
+
+@campaigns_bp.route("/<int:campaign_id>/stats", methods=["GET"])
+@handle_errors
+def get_campaign_stats(campaign_id: int):
+    """Get statistics for a specific campaign."""
+    Campaign = get_model('Campaign')
+    campaign = Campaign.query.get_or_404(campaign_id)
+
+    stats = {
+        "total_teams": len(campaign.campaign_teams) if campaign.campaign_teams else 0,
+        "total_events": len(campaign.events) if campaign.events else 0,
+        "total_volunteers": len(campaign.volunteers) if campaign.volunteers else 0,
+        "days_remaining": (campaign.end_date.date() - datetime.now().date()).days if campaign.end_date else None
+    }
+
+    return create_response(data=stats)

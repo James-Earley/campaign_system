@@ -1,0 +1,97 @@
+2025-02-02 10:20:39,839 INFO: Campaign manager startup [in C:\Projects\campaign_system\app\__init__.py:43]
+2025-02-02 10:20:39,934 INFO: Model factory initialized successfully [in C:\Projects\campaign_system\app\models\factory.py:52]
+2025-02-02 10:20:39,960 INFO: Registered blueprints: main, citizens, campaigns, events, donations, volunteers, canvassing, campaign_team, canvassers, event_staffers, outreach [in C:\Projects\campaign_system\app\routes\__init__.py:107]
+2025-02-02 10:20:40,033 INFO: Database initialized [in C:\Projects\campaign_system\app\__init__.py:59]
+2025-02-02 10:20:43,320 INFO: Campaign manager startup [in C:\Projects\campaign_system\app\__init__.py:43]
+2025-02-02 10:20:43,423 INFO: Model factory initialized successfully [in C:\Projects\campaign_system\app\models\factory.py:52]
+2025-02-02 10:20:43,480 INFO: Registered blueprints: main, citizens, campaigns, events, donations, volunteers, canvassing, campaign_team, canvassers, event_staffers, outreach [in C:\Projects\campaign_system\app\routes\__init__.py:107]
+2025-02-02 10:20:43,482 INFO: Database initialized [in C:\Projects\campaign_system\app\__init__.py:59]
+2025-02-02 10:20:44,225 INFO: Campaign manager startup [in C:\Projects\campaign_system\app\__init__.py:43]
+2025-02-02 10:20:44,246 INFO: Model factory initialized successfully [in C:\Projects\campaign_system\app\models\factory.py:52]
+2025-02-02 10:20:44,253 INFO: Registered blueprints: main, citizens, campaigns, events, donations, volunteers, canvassing, campaign_team, canvassers, event_staffers, outreach [in C:\Projects\campaign_system\app\routes\__init__.py:107]
+2025-02-02 10:20:44,256 INFO: Database initialized [in C:\Projects\campaign_system\app\__init__.py:59]
+2025-02-02 10:20:45,121 INFO: Campaign manager startup [in C:\Projects\campaign_system\app\__init__.py:43]
+2025-02-02 10:20:45,142 INFO: Model factory initialized successfully [in C:\Projects\campaign_system\app\models\factory.py:52]
+2025-02-02 10:20:45,150 INFO: Registered blueprints: main, citizens, campaigns, events, donations, volunteers, canvassing, campaign_team, canvassers, event_staffers, outreach [in C:\Projects\campaign_system\app\routes\__init__.py:107]
+2025-02-02 10:20:45,152 INFO: Database initialized [in C:\Projects\campaign_system\app\__init__.py:59]
+2025-02-02 10:21:11,665 ERROR: Exception on /api/v1/campaigns [POST] [in C:\Projects\campaign_system\venv\Lib\site-packages\flask\app.py:875]
+Traceback (most recent call last):
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2522, in get_property
+    return self._props[key]
+           ~~~~~~~~~~~^^^^^
+KeyError: 'donor'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\campaign_system\app\routes\campaigns.py", line 21, in create_campaign
+    campaign = Campaign(
+               ^^^^^^^^^
+  File "<string>", line 4, in __init__
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\sqlalchemy\orm\state.py", line 566, in _initialize_instance
+    manager.dispatch.init(self, args, kwargs)
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\sqlalchemy\event\attr.py", line 497, in __call__
+    fn(*args, **kw)
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4405, in _event_on_init
+    instrumenting_mapper._check_configure()
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2401, in _check_configure
+    _configure_registries({self.registry}, cascade=True)
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4213, in _configure_registries
+    _do_configure_registries(registries, cascade)
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4254, in _do_configure_registries
+    mapper._post_configure_properties()
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2418, in _post_configure_properties
+    prop.init()
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\sqlalchemy\orm\interfaces.py", line 589, in init
+    self.do_init()
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1661, in do_init
+    self._generate_backref()
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\sqlalchemy\orm\relationships.py", line 2147, in _generate_backref
+    self._add_reverse_property(self.back_populates)
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1592, in _add_reverse_property
+    other = self.mapper.get_property(key, _configure_mappers=False)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\campaign_system\venv\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2524, in get_property
+    raise sa_exc.InvalidRequestError(
+sqlalchemy.exc.InvalidRequestError: Mapper 'Mapper[Donation(donations)]' has no property 'donor'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2025-02-02 10:22:43,487 INFO: Campaign manager startup [in C:\Projects\campaign_system\app\__init__.py:43]
+2025-02-02 10:22:43,526 INFO: Model factory initialized successfully [in C:\Projects\campaign_system\app\models\factory.py:52]
+2025-02-02 10:22:43,552 INFO: Registered blueprints: main, citizens, campaigns, events, donations, volunteers, canvassing, campaign_team, canvassers, event_staffers, outreach [in C:\Projects\campaign_system\app\routes\__init__.py:107]
+2025-02-02 10:22:43,622 INFO: Database initialized [in C:\Projects\campaign_system\app\__init__.py:59]
+2025-02-02 10:22:44,363 INFO: Campaign manager startup [in C:\Projects\campaign_system\app\__init__.py:43]
+2025-02-02 10:22:44,395 INFO: Model factory initialized successfully [in C:\Projects\campaign_system\app\models\factory.py:52]
+2025-02-02 10:22:44,413 INFO: Registered blueprints: main, citizens, campaigns, events, donations, volunteers, canvassing, campaign_team, canvassers, event_staffers, outreach [in C:\Projects\campaign_system\app\routes\__init__.py:107]
+2025-02-02 10:22:44,416 INFO: Database initialized [in C:\Projects\campaign_system\app\__init__.py:59]
+2025-02-02 10:22:45,216 INFO: Campaign manager startup [in C:\Projects\campaign_system\app\__init__.py:43]
+2025-02-02 10:22:45,239 INFO: Model factory initialized successfully [in C:\Projects\campaign_system\app\models\factory.py:52]
+2025-02-02 10:22:45,246 INFO: Registered blueprints: main, citizens, campaigns, events, donations, volunteers, canvassing, campaign_team, canvassers, event_staffers, outreach [in C:\Projects\campaign_system\app\routes\__init__.py:107]
+2025-02-02 10:22:45,249 INFO: Database initialized [in C:\Projects\campaign_system\app\__init__.py:59]
+2025-02-02 10:23:03,701 INFO: Campaign manager startup [in C:\Projects\campaign_system\app\__init__.py:43]
+2025-02-02 10:23:03,724 INFO: Model factory initialized successfully [in C:\Projects\campaign_system\app\models\factory.py:52]
+2025-02-02 10:23:03,736 INFO: Registered blueprints: main, citizens, campaigns, events, donations, volunteers, canvassing, campaign_team, canvassers, event_staffers, outreach [in C:\Projects\campaign_system\app\routes\__init__.py:107]
+2025-02-02 10:23:03,810 INFO: Database initialized [in C:\Projects\campaign_system\app\__init__.py:59]
+2025-02-02 10:23:04,623 INFO: Campaign manager startup [in C:\Projects\campaign_system\app\__init__.py:43]
+2025-02-02 10:23:04,645 INFO: Model factory initialized successfully [in C:\Projects\campaign_system\app\models\factory.py:52]
+2025-02-02 10:23:04,662 INFO: Registered blueprints: main, citizens, campaigns, events, donations, volunteers, canvassing, campaign_team, canvassers, event_staffers, outreach [in C:\Projects\campaign_system\app\routes\__init__.py:107]
+2025-02-02 10:23:04,666 INFO: Database initialized [in C:\Projects\campaign_system\app\__init__.py:59]
+2025-02-02 10:23:05,542 INFO: Campaign manager startup [in C:\Projects\campaign_system\app\__init__.py:43]
+2025-02-02 10:23:05,563 INFO: Model factory initialized successfully [in C:\Projects\campaign_system\app\models\factory.py:52]
+2025-02-02 10:23:05,572 INFO: Registered blueprints: main, citizens, campaigns, events, donations, volunteers, canvassing, campaign_team, canvassers, event_staffers, outreach [in C:\Projects\campaign_system\app\routes\__init__.py:107]
+2025-02-02 10:23:05,576 INFO: Database initialized [in C:\Projects\campaign_system\app\__init__.py:59]
+2025-02-02 10:23:34,157 INFO: Campaign manager startup [in C:\Projects\campaign_system\app\__init__.py:43]
+2025-02-02 10:23:34,178 INFO: Model factory initialized successfully [in C:\Projects\campaign_system\app\models\factory.py:52]
+2025-02-02 10:23:34,185 INFO: Registered blueprints: main, citizens, campaigns, events, donations, volunteers, canvassing, campaign_team, canvassers, event_staffers, outreach [in C:\Projects\campaign_system\app\routes\__init__.py:107]
+2025-02-02 10:23:34,187 INFO: Database initialized [in C:\Projects\campaign_system\app\__init__.py:59]
+2025-02-02 10:26:49,804 INFO: Campaign manager startup [in C:\Projects\campaign_system\app\__init__.py:43]

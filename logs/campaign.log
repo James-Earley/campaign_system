@@ -1,0 +1,3 @@
+2025-02-02 10:26:49,825 INFO: Model factory initialized successfully [in C:\Projects\campaign_system\app\models\factory.py:52]
+2025-02-02 10:26:49,838 INFO: Registered blueprints: main, citizens, campaigns, events, donations, volunteers, canvassing, campaign_team, canvassers, event_staffers, outreach [in C:\Projects\campaign_system\app\routes\__init__.py:107]
+2025-02-02 10:26:49,841 INFO: Database initialized [in C:\Projects\campaign_system\app\__init__.py:59]

@@ -1,38 +1,32 @@
 from flask import Flask
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.middleware.proxy_fix import ProxyFix
 import os
 
 db = SQLAlchemy()
+migrate = Migrate()
 
 def create_app():
     app = Flask(__name__)
-
-    # Set up database
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(base_dir, "instance", "campaign.db")}'
+    app.wsgi_app = ProxyFix(app.wsgi_app)
+    app.url_map.strict_slashes = False  
+    
+    app.config['DEBUG'] = True
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+        'DATABASE_URL',
+        f'sqlite:///{os.path.join(os.path.dirname(__file__), "instance", "campaign.db")}'
+    )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_ECHO'] = True
 
-    # Initialize database
+    os.makedirs(os.path.join(os.path.dirname(__file__), 'instance'), exist_ok=True)
+
     db.init_app(app)
+    migrate.init_app(app, db)
 
-    # Ensure instance directory exists
-    os.makedirs(os.path.join(base_dir, "instance"), exist_ok=True)
-
-    # Import models AFTER initializing db (avoids circular import)
     with app.app_context():
-        from app.models import initialize_models
-        Campaign, Citizen, Donation = initialize_models(db)
-        
-        # ✅ Ensure tables are created
-        db.create_all()
-
-    # Register blueprints AFTER app context setup
-    from app.routes import citizens_bp, campaigns_bp, donations_bp ,main_bp
-    app.register_blueprint(citizens_bp, url_prefix='/api/v1/citizens')
-    app.register_blueprint(campaigns_bp, url_prefix='/api/v1/campaigns')
-    app.register_blueprint(donations_bp, url_prefix='/api/v1/donations')  
-    app.register_blueprint(main_bp, url_prefix='/')
+        from app.models.factory import model_factory
+        model_factory.initialize(db, app)  # This will handle blueprint registration
 
     return app
-
-app = create_app()
